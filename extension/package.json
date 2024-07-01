@@ -1,0 +1,16 @@
+{
+  "name": "extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "background.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/tailwind.css -o ./dist/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/tailwind.css -o ./dist/tailwind.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.4"
+  }
+}
