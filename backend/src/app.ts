@@ -17,26 +17,10 @@ const io:Server = new Server(httpServer)
 io.on('connection', (socket:Socket) => {
   console.log('a user connected');
   handleRoomSocket(socket, io);
-
   
-  socket.on("test", () => {
-    // socket.broadcast.emit('hi');
-    // socket.emit('test', 'Hello Testing event!');
-    // console.log('test event received', data);
-    io.emit('testing', io.engine.clientsCount);
-  })
-
-  // socket.on('disconnect', () => {
-  //   console.log('user disconnected');
-  // });
-
   socket.on('error', (error: Error) => {
     console.error('Socket error:', error);
   });
-
-  // setInterval(() => {
-  //   io.emit('interval', { timestamp: Date.now() });
-  // }, 2000);
 });
 
 

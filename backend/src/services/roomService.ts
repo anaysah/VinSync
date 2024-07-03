@@ -1,5 +1,6 @@
 // src/services/roomService.ts
 
+import { Socket } from "socket.io";
 import { Rooms } from "../types/types";
 
 var rooms:Rooms = {};
@@ -54,27 +55,24 @@ const joinRoom = (socketId: string, roomId: string, userId: string): void => {
   socketRoomMapping[socketId] = roomId;
 };
 
-const leaveRoom = (scoketId: string ): void =>{
-  // console.log(joinedRooms)
-  // for (const roomId in joinedRooms) {
-  //   if (roomId in rooms){
-  //     delete rooms[roomId][scoketId];
-  //   }
-  // }
-  // console.log(`${scoketId} left ${joinedRooms}`)
+const leaveRoom = (scoketId: string, socket: Socket ): void =>{
+  const roomId = socketRoomMapping[scoketId];
+  if (!roomId) {
+    throw new Error('User is not in a room');
+  }
+  socket.leave(roomId);
   delete rooms[socketRoomMapping[scoketId]][scoketId]
   delete socketRoomMapping[scoketId]
 }
 
-const allUsers = (message:string, callback:Function): void => {
+const allRooms = (message:string, callback:Function): void => {
   console.log(JSON.stringify(rooms));
-  // callback(rooms);
-  // return Object.keys(rooms);
+  callback(JSON.stringify(rooms));
 };
 
 export {
   createRoom,
   joinRoom,
-  allUsers,
+  allRooms,
   leaveRoom
 };
