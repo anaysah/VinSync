@@ -32,10 +32,21 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
     socket.leave(socket.id);
   });
   
-  socket.on('disconnect',()=> leaveRoom(socket.id, socket));
+  socket.on('disconnect',()=> {
+    try{
+      leaveRoom(socket.id, socket);
+      socket.leave(socket.id);
+    }catch(error:any){
+      socket.emit('error', error.message);
+    }
+  });
 
   socket.on('allRooms', allRooms);
 
+  socket.on("testing", (data,callback)=>{
+    console.log(data)
+    callback("done testing");
+  })
   
 };
 

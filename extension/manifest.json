@@ -7,6 +7,7 @@
     "default_popup": "src/pages/index.html"
   },
   "permissions": [
+    "background",
     "activeTab",
     "storage"
   ],
