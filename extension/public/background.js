@@ -1,5 +1,5 @@
 // Include the Socket.IO client script
-importScripts("socket.io.js");
+importScripts("libs/socket.io.js");
 // importScripts('https://cdn.socket.io/4.0.0/socket.io.min.js');
 
 // Connect to the Socket.IO server

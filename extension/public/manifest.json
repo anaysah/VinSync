@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "A video Sycing extension for Chrome",
   "action": {
-    "default_popup": "src/pages/index.html"
+    "default_popup": "index.html"
   },
   "permissions": [
     "background",
@@ -12,7 +12,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -20,7 +20,7 @@
         "<all_urls>"
       ],
       "js": [
-        "src/content.js"
+        "content.js"
       ]
     }
   ]
