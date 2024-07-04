@@ -19,7 +19,7 @@ socket.on('connect', () => {
 
   // Emit a test event when connected
   // socket.emit('testing', "sotnhing");
-  emitTestEvent("testing");
+  // emitTestEvent("testing");
 });
 
 socket.on('disconnect', () => {
@@ -27,8 +27,15 @@ socket.on('disconnect', () => {
 });
 
 // Add more event listeners as needed
-socket.on('yourEvent', (data) => {
-  console.log('Received yourEvent:', data);
+socket.on('message', (data) => {
+  console.log('Received message from server:', data);
+  chrome.runtime.sendMessage({ type: 'message', data: data });
+});
+
+// Add more event listeners as needed
+socket.on('error', (data) => {
+  console.log('Received error from server:', data);
+  chrome.runtime.sendMessage({ type: 'error', data: data });
 });
 
 // You can also define functions to emit events from other parts of your extension
@@ -38,14 +45,13 @@ function emitTestEvent(data) {
   });
 }
 
-// Example function call
-// emitTestEvent("testing");
-
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "createRoom") {
     console.log("background.js received createRoom message:", message.data);
     socket.emit('createRoom', message.data.roomId, message.data.userId);
-    emitTestEvent("testing");
+  }
+  if (message.type === "joinRoom") {
+    console.log("background.js received joinRoom message:", message.data);
+    socket.emit('joinRoom', message.data.roomId, message.data.userId);
   }
 });
