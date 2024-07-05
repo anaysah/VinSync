@@ -39,7 +39,7 @@ const joinRoom = (socketId: string, roomId: string, userId: string): void => {
     throw new Error('User ID is required');
   }
   if (socketRoomMapping[socketId]){
-    throw new Error('User is already in a room');
+    throw new Error('You are already in the room');
   }
 
   // Check if the room exists
@@ -47,7 +47,7 @@ const joinRoom = (socketId: string, roomId: string, userId: string): void => {
     throw new Error('Room not found');
   }
   if (rooms[roomId][socketId]) {
-    throw new Error('User is already in the room');
+    throw new Error('You are already in the room');
   }
 
   // Add the user to the room
@@ -61,6 +61,7 @@ const leaveRoom = (scoketId: string, socket: Socket ): void =>{
     throw new Error('User is not in a room');
   }
   socket.leave(roomId);
+  socket.to(roomId).emit('message', `User ${rooms[roomId][scoketId].name} left the room`);
   delete rooms[socketRoomMapping[scoketId]][scoketId]
   delete socketRoomMapping[scoketId]
 }

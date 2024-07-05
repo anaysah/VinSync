@@ -9,7 +9,8 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
     try {
       createRoom(socket.id, roomId, userId);
       socket.join(roomId);
-      socket.emit('message', roomId);
+      socket.emit('message', `You created the room ${roomId}`);
+      socket.emit('message', `You joined the room ${roomId}`);
     } catch (error:any) {
       socket.emit('error', error.message);
     }
@@ -33,9 +34,11 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
   });
   
   socket.on('disconnect',()=> {
+    console.log(`User ${socket.id} disconnected \n`)
     try{
       leaveRoom(socket.id, socket);
       socket.leave(socket.id);
+      socket.emit('message', `You got disconnected`);
     }catch(error:any){
       socket.emit('error', error.message);
     }

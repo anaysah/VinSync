@@ -15,7 +15,7 @@ const io:Server = new Server(httpServer)
 
 // Socket handling
 io.on('connection', (socket:Socket) => {
-  console.log('a user connected');
+  console.log(`Socket connected: ${socket.id}`);
   handleRoomSocket(socket, io);
   
   socket.on('error', (error: Error) => {

@@ -1,38 +1,27 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { Errors, Messages } from "../../types/all";
 
-//create a type for the message
 
-type Message = {
-  time: string;
-  data: string;
-}
-
-type Error = {
-  time: string;
-  data: string;
-}
-
-type Messages = Message[];
-
-type Errors = Error[];
-
-function getCurrentTime() {
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
-}
 
 const Footer = () => {
   const [messages, setMessages] = useState<Messages>([])
   const [errors, setErrors] = useState<Errors>([])
 
+  useEffect(() => {
+    chrome.runtime.sendMessage({type:"getMessages"})
+    chrome.runtime.sendMessage({type:"getErrors"})
+  } , [])
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "message") {
-      setMessages([{data:message.data, time: getCurrentTime()}, ...messages, ])
+      setMessages([message.data, ...messages ])
     } else if (message.type === "error") {
-      setErrors([{data:message.data, time: getCurrentTime()}, ...errors, ])
+      setErrors([message.data, ...errors ])
+    }else if(message.type==="allMessages"){
+      console.log(message.data)
+      setMessages(message.data)
+    }else if(message.type==="allErrors"){
+      setErrors(message.data)
     }
   });
   

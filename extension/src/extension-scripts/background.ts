@@ -1,6 +1,12 @@
 // Include the Socket.IO client script
-importScripts("libs/socket.io.js");
-// importScripts('https://cdn.socket.io/4.0.0/socket.io.min.js');
+// importScripts("libs/socket.io.js");
+import { io } from "socket.io-client";
+import {Error, Errors, Message, Messages } from "../types/all";
+import { getCurrentTime } from "../helpers/utils";
+
+var messages:Messages = [];
+var errors:Errors = [];
+
 
 // Connect to the Socket.IO server
 const socket = io("http://localhost:3000", {
@@ -11,15 +17,10 @@ const socket = io("http://localhost:3000", {
   transports: ['websocket'],
 });
 
-// const socket = io("http://localhost:3000")
 
 // Event listeners
 socket.on('connect', () => {
-  console.log('Connected to Socket.IO server');
-
-  // Emit a test event when connected
-  // socket.emit('testing', "sotnhing");
-  // emitTestEvent("testing");
+  chrome.runtime.sendMessage({ type: 'message', data: "Connected to Socket.IO server" });
 });
 
 socket.on('disconnect', () => {
@@ -29,23 +30,27 @@ socket.on('disconnect', () => {
 // Add more event listeners as needed
 socket.on('message', (data) => {
   console.log('Received message from server:', data);
-  chrome.runtime.sendMessage({ type: 'message', data: data });
+  let message:Message = {data:data, time: getCurrentTime()}
+  chrome.runtime.sendMessage({ type: 'message', data: message });
+  messages = [ ...messages, message]
 });
 
 // Add more event listeners as needed
 socket.on('error', (data) => {
   console.log('Received error from server:', data);
-  chrome.runtime.sendMessage({ type: 'error', data: data });
+  let error:Error = {data:data, time: getCurrentTime()}
+  chrome.runtime.sendMessage({ type: 'error', data: error });
+  errors = [ ...errors, error]
 });
 
 // You can also define functions to emit events from other parts of your extension
-function emitTestEvent(data) {
-  socket.emit('testing', data, (response) => {
-    console.log('Response from server:', response);
-  });
-}
+// function emitTestEvent(data) {
+//   socket.emit('testing', data, (response) => {
+//     console.log('Response from server:', response);
+//   });
+// }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "createRoom") {
     console.log("background.js received createRoom message:", message.data);
     socket.emit('createRoom', message.data.roomId, message.data.userId);
@@ -53,5 +58,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "joinRoom") {
     console.log("background.js received joinRoom message:", message.data);
     socket.emit('joinRoom', message.data.roomId, message.data.userId);
+  }
+  if(message.type === "getMessages"){
+    chrome.runtime.sendMessage({ type: 'allMessages', data: messages });
+  }
+  if(message.type === "getErrors"){
+    chrome.runtime.sendMessage({ type: 'allErrors', data: errors });
   }
 });
