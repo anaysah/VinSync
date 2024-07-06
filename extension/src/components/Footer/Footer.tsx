@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Errors, Messages } from "../../types/all";
+import { Errors, LogEntry, Messages } from "vinsync"
 
 
 
@@ -30,13 +30,13 @@ const Footer = () => {
     <div className="border-t-2">
       Messages:
       <div id="messages" className="flex flex-col border h-10 overflow-auto">
-        {messages.map((message, index) => (
+        {messages.map((message: LogEntry, index: number) => (
           <div key={index}><span>{message.time}</span> <span>{message.data}</span></div>
         ))}
       </div>
       Errors:
       <div id="errors" className="flex flex-col border h-10 overflow-auto">
-        {errors.map((error, index) => (
+        {errors.map((error: LogEntry, index: number) => (
           <div key={index}><span>{error.time}</span> <span>{error.data}</span></div>
         ))}
       </div>

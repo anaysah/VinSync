@@ -1,11 +1,21 @@
 // Include the Socket.IO client script
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
-import {Error, Errors, Message, Messages } from "../types/all";
 import { getCurrentTime } from "../helpers/utils";
+import { Errors, LogEntry, Messages, Room, User } from "vinsync";
 
 var messages:Messages = [];
 var errors:Errors = [];
+
+var room:Room | undefined;
+// room = {
+//   name: "any name", // this name is also same to roomId
+//   members: {
+//     sockedId:{name:"any name"}, //name is same as userId
+//     '--djdhajad':{name:"any name"}, //name is same as userId
+//     'ddkadajdjd':{name:"any name"}
+//   } //members list
+// }
 
 
 // Connect to the Socket.IO server
@@ -27,21 +37,38 @@ socket.on('disconnect', () => {
   console.log('Disconnected from Socket.IO server');
 });
 
-// Add more event listeners as needed
-socket.on('message', (data) => {
+const addDataIntoLog = (type:"error" | "message", data:string) =>{
   console.log('Received message from server:', data);
-  let message:Message = {data:data, time: getCurrentTime()}
-  chrome.runtime.sendMessage({ type: 'message', data: message });
-  messages = [ ...messages, message]
+  let log:LogEntry = {data:data, time: getCurrentTime()}
+  chrome.runtime.sendMessage({ type: type, data: log });
+  if(type === "message")
+  messages = [ ...messages, log]
+  else
+  errors = [ ...errors, log]
+}
+
+// Add more event listeners as needed
+socket.on('message', (data:string) => {
+  addDataIntoLog("message", data);
 });
 
 // Add more event listeners as needed
-socket.on('error', (data) => {
-  console.log('Received error from server:', data);
-  let error:Error = {data:data, time: getCurrentTime()}
-  chrome.runtime.sendMessage({ type: 'error', data: error });
-  errors = [ ...errors, error]
+socket.on('error', (data:string) => {
+  addDataIntoLog("error", data);
 });
+
+socket.on("roomData", (data:Room)=>{
+  room = data;
+  chrome.runtime.sendMessage({ type: 'room', data: data });
+})
+
+// socket.on("newMember", (data:User)=>{
+//   room.members = { ...room.members, [data.socketId!]:{name:data.name}}
+// })
+
+// socket.on("joinRoom", (data:Room)=>{
+//   room = data;
+// })
 
 // You can also define functions to emit events from other parts of your extension
 // function emitTestEvent(data) {
@@ -50,19 +77,33 @@ socket.on('error', (data) => {
 //   });
 // }
 
+
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "createRoom") {
     console.log("background.js received createRoom message:", message.data);
-    socket.emit('createRoom', message.data.roomId, message.data.userId);
+    socket.emit('createRoom', message.data.roomId, message.data.userId)
   }
+
   if (message.type === "joinRoom") {
     console.log("background.js received joinRoom message:", message.data);
     socket.emit('joinRoom', message.data.roomId, message.data.userId);
   }
+  
   if(message.type === "getMessages"){
     chrome.runtime.sendMessage({ type: 'allMessages', data: messages });
   }
+
   if(message.type === "getErrors"){
     chrome.runtime.sendMessage({ type: 'allErrors', data: errors });
+  }
+  
+  if(message.type === "getRoom"){
+    chrome.runtime.sendMessage({ type: 'room', data: room });
+  }
+
+  if(message.type == "leaveRoom"){
+    socket.emit('leaveRoom');
+    room = undefined;
   }
 });

@@ -8,7 +8,7 @@ const Layout: React.FC = () => {
   return (
     <div className='flex flex-col h-full'>
       <Navbar />
-      <main className="p-2 flex-1">
+      <main className="p-2 flex-1 flex flex-col gap-1">
         <Outlet />
       </main>
       <Footer />

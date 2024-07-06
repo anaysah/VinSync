@@ -1,12 +1,13 @@
 // src/services/roomService.ts
 
 import { Socket } from "socket.io";
-import { Rooms } from "../types/types";
+import { Room, Rooms } from "vinsync";
 
 var rooms:Rooms = {};
 var socketRoomMapping: { [socketId: string]: string } = {};
 
-const createRoom = (socketId: string ,roomId: string, userId: string): void => {
+const createRoom = (socketId: string ,roomId: string, userId: string):Room => {
+  console.log(socketRoomMapping,"::" ,rooms);
   if (!roomId) {
     throw new Error('Room ID is required');
   }
@@ -29,9 +30,12 @@ const createRoom = (socketId: string ,roomId: string, userId: string): void => {
   socketRoomMapping[socketId] = roomId;
 
   console.log(rooms);
+  return {name:roomId, members:rooms[roomId]}
 };
 
-const joinRoom = (socketId: string, roomId: string, userId: string): void => {
+const joinRoom = (socketId: string, roomId: string, userId: string): Room => {
+  console.log(socketRoomMapping,"::" ,rooms);
+
   if (!roomId) {
     throw new Error('Room ID is required');
   }
@@ -53,27 +57,35 @@ const joinRoom = (socketId: string, roomId: string, userId: string): void => {
   // Add the user to the room
   rooms[roomId][socketId] = {name:userId};
   socketRoomMapping[socketId] = roomId;
+  return {name:roomId, members:rooms[roomId]}
 };
 
-const leaveRoom = (scoketId: string, socket: Socket ): void =>{
+const leaveRoom = (scoketId: string ):{userId:string, roomId:string} =>{
   const roomId = socketRoomMapping[scoketId];
+  const userId = rooms[roomId][scoketId].name;
   if (!roomId) {
     throw new Error('User is not in a room');
   }
-  socket.leave(roomId);
-  socket.to(roomId).emit('message', `User ${rooms[roomId][scoketId].name} left the room`);
+  
   delete rooms[socketRoomMapping[scoketId]][scoketId]
   delete socketRoomMapping[scoketId]
+  return {userId:userId, roomId:roomId};
 }
 
-const allRooms = (message:string, callback:Function): void => {
-  console.log(JSON.stringify(rooms));
-  callback(JSON.stringify(rooms));
-};
+// const allRooms = (message:string, callback:Function): Room => {
+//   console.log(JSON.stringify(rooms));
+//   callback(JSON.stringify(rooms));
+// };
+
+const getRoomData = (roomId: string): Room => {
+  return {name:roomId, members:rooms[roomId]}
+}
+
 
 export {
   createRoom,
   joinRoom,
-  allRooms,
-  leaveRoom
+  // allRooms,
+  leaveRoom,
+  getRoomData
 };
