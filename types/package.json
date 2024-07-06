@@ -1,0 +1,8 @@
+{
+  "name": "@types/vinsync",
+  "version": "1.0.0",
+  "description": "types of this project only",
+  "main": "",
+  "types": "types.d.ts",
+  "license": "ISC"
+}
