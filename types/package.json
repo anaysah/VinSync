@@ -4,5 +4,8 @@
   "description": "types of this project only",
   "main": "",
   "types": "types.d.ts",
+  "scripts": {
+    "build-types": "node copy-types.js"
+  },
   "license": "ISC"
 }

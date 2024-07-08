@@ -1,7 +1,6 @@
 // src/services/roomService.ts
 
-import { Socket } from "socket.io";
-import { Room, Rooms } from "vinsync";
+import { Room, Rooms } from "../types/types";
 
 var rooms:Rooms = {};
 var socketRoomMapping: { [socketId: string]: string } = {};

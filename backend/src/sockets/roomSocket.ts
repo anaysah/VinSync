@@ -2,7 +2,7 @@
 
 import { Server, Socket } from 'socket.io';
 import { createRoom, getRoomData, joinRoom, leaveRoom } from '../services/roomService';
-import { Room } from 'vinsync';
+import { Room } from '../types/types';
 
 const handleRoomSocket = (socket:Socket, io:Server) => {
   socket.on('createRoom', (roomId, userId) => {
