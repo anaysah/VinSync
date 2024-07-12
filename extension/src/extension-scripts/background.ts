@@ -2,7 +2,7 @@
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
 import { getCurrentTime } from "../helpers/utils";
-import { Errors, LogEntry, Messages, Room, User } from "vinsync";
+import { Errors, LogEntry, Messages, Room } from "../types/types";
 
 var messages:Messages = [];
 var errors:Errors = [];
@@ -105,5 +105,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if(message.type == "leaveRoom"){
     socket.emit('leaveRoom');
     room = undefined;
+  }
+
+  if(message.type === "log"){
+    console.log("log: ", message.data);
   }
 });

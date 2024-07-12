@@ -10,7 +10,7 @@ export default defineConfig({
       input: {
         main: 'index.html',
         background: resolve(__dirname, 'src/extension-scripts/background.ts'),
-        content: resolve(__dirname, 'src/extension-scripts/content.js')
+        content: resolve(__dirname, 'src/extension-scripts/content.ts')
       },
       output: {
         entryFileNames: '[name].js'

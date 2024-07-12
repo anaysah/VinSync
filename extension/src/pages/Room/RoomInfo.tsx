@@ -32,9 +32,30 @@ const RoomInfo = () => {
         <div id="membersList">
           <div>Members: </div>
           <ul>
-            {room && Object.keys(room.members).map((member) => (
-              <li key={member}>{room.members[member].name}</li>
-            ))}
+            {room && Object.keys(room.members).map((memberId) => {
+              const member = room.members[memberId];
+              const isAdmin = member.isAdmin; // Assuming isAdmin is a boolean indicating admin status
+
+              return (
+                <>
+                <hr />
+                <li key={memberId} className="flex items-center py-0.5">
+                  <span>{member.name}</span>
+                  <span className="ml-auto flex justify-center items-center">
+                  {isAdmin && (
+                    <span
+                      className="inline-block w-5 h-5 bg-yellow-300 text-neutral-600 rounded-full text-center"
+                      title="Admin"
+                    >
+                      A
+                    </span>
+                  )}
+                  </span>
+                </li>
+                </>
+              );
+            })}
+            <hr />
           </ul>
         </div>
     </div>

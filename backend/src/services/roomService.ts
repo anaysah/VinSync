@@ -1,6 +1,6 @@
 // src/services/roomService.ts
 
-import { Room, Rooms } from "../types/types";
+import { Room, Rooms, User } from "../types/types";
 
 var rooms:Rooms = {};
 var socketRoomMapping: { [socketId: string]: string } = {};
@@ -23,7 +23,7 @@ const createRoom = (socketId: string ,roomId: string, userId: string):Room => {
   }
   // Create a new room
   rooms[roomId] = {
-    [socketId]: {name:userId}
+    [socketId]: {name:userId, isAdmin:true}
   };
 
   socketRoomMapping[socketId] = roomId;
@@ -54,7 +54,8 @@ const joinRoom = (socketId: string, roomId: string, userId: string): Room => {
   }
 
   // Add the user to the room
-  rooms[roomId][socketId] = {name:userId};
+  const newUser:User = {name:userId, isAdmin:false}
+  rooms[roomId][socketId] = newUser;
   socketRoomMapping[socketId] = roomId;
   return {name:roomId, members:rooms[roomId]}
 };

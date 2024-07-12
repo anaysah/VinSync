@@ -2,6 +2,7 @@
 interface User {
   name: string;
   socketId?: string;
+  isAdmin: boolean;
   // Add more properties as needed
 }
 
@@ -17,6 +18,7 @@ type Rooms = {
 interface Room {
   name: string;
   members: RoomMembers;
+  videoLink?: string;
 }
 
 export type { User, Room, Rooms, RoomMembers };
