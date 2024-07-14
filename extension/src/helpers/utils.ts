@@ -6,4 +6,39 @@ function getCurrentTime() {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-export { getCurrentTime }
+function getJSPath(element) {
+  if (!element) return; // If element is not provided
+
+  let path = '';
+  const pathSegments = [];
+
+  while (element) {
+      let selector = getElementSelector(element);
+      pathSegments.unshift(selector);
+      element = element.parentElement;
+  }
+
+  path = pathSegments.join(' > ');
+  return path;
+}
+
+function getElementSelector(element) {
+  if (!element) return '';
+
+  let selector = '';
+  const id = element.id;
+  const classes = Array.from(element.classList).join('.');
+  const tagName = element.tagName.toLowerCase();
+
+  if (id) {
+      selector = `#${id}`;
+  } else if (classes) {
+      selector = `${tagName}.${classes}`;
+  } else {
+      selector = tagName;
+  }
+
+  return selector;
+}
+
+export { getCurrentTime, getJSPath }

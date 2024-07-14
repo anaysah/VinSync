@@ -85,29 +85,36 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     socket.emit('createRoom', message.data.roomId, message.data.userId)
   }
 
-  if (message.type === "joinRoom") {
+  else if (message.type === "joinRoom") {
     console.log("background.js received joinRoom message:", message.data);
     socket.emit('joinRoom', message.data.roomId, message.data.userId);
   }
   
-  if(message.type === "getMessages"){
+  else if(message.type === "getMessages"){
     chrome.runtime.sendMessage({ type: 'allMessages', data: messages });
   }
 
-  if(message.type === "getErrors"){
+  else if(message.type === "getErrors"){
     chrome.runtime.sendMessage({ type: 'allErrors', data: errors });
   }
   
-  if(message.type === "getRoom"){
+  else if(message.type === "getRoom"){
     chrome.runtime.sendMessage({ type: 'room', data: room });
   }
 
-  if(message.type == "leaveRoom"){
+  else if(message.type == "leaveRoom"){
     socket.emit('leaveRoom');
     room = undefined;
   }
 
-  if(message.type === "log"){
+  else if(message.type === "log"){
     console.log("log: ", message.data);
+  }
+
+  else if(message.type === "broadcastToContentScripts"){
+    //send message to current tab
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, message);
+    });
   }
 });
