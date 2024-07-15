@@ -1,14 +1,19 @@
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BroadcastMessage, Home } from "../../types/types";
+import { BroadcastMessage, Home, VideoControl } from "../../types/types";
 
 const Home = () => {
   const [highlighting, setHighlighting] = useState(false);
 
-  const handleControl = (action) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: action });
-    });
+  const handleControl = (control:VideoControl) => {
+    let m:BroadcastMessage = {
+      type: "BroadcastMessage",
+      action: "VideoControl",
+      data: { Control: control },
+      to: ["contentScripts"],
+      from: "extension",
+    }
+    chrome.runtime.sendMessage(m);
   };
 
   useEffect(() => {

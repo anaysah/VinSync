@@ -53,3 +53,7 @@ interface Home{
 }
 
 export { Home }
+
+type VideoControl = "playVideo" | "pauseVideo" | "rewind" | "fastForward";
+
+export type { VideoControl }

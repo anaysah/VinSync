@@ -161,24 +161,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if(highlighting) addEventListenerToHighlight();
         else removeEventListenerToHighlight();
       }
+      if (m.action == "VideoControl") {
+        switch (request.data.Control) {
+          case 'playVideo':
+            console.log('play video');
+            videoElement && videoElement.play();
+            break;
+          case 'pauseVideo':
+            console.log('pause video');
+            videoElement && videoElement.pause();
+            break;
+          case 'rewind':
+            console.log('rewind');
+            videoElement && (videoElement.currentTime -= 10);
+            break;
+          case 'fastForward':
+            console.log('fast forward');
+            videoElement && (videoElement.currentTime += 10);
+            break;
+          default:
+            console.log('Unknown control action');
+            break;
+        }
+      }
     }
   }
-  else if (request.type="videoContorl") {
-    if(request.action === 'playVideo'){
-      console.log('play video');
-      videoElement && videoElement.play();
-    }
-    else if (request.action === 'pauseVideo') {
-      console.log('pause video');
-      videoElement && videoElement.pause();
-    }
-    else if(request.action === 'rewind'){
-      console.log('rewind');
-      videoElement && (videoElement.currentTime -= 10);
-    }
-    else if(request.action === 'fastForward'){
-      console.log('fast forward');
-      videoElement && (videoElement.currentTime += 10);
-    }
-  } 
+  // else if (request.type="videoContorl") {
+  //   if(request.action === 'playVideo'){
+  //     console.log('play video');
+  //     videoElement && videoElement.play();
+  //   }
+  //   else if (request.action === 'pauseVideo') {
+  //     console.log('pause video');
+  //     videoElement && videoElement.pause();
+  //   }
+  //   else if(request.action === 'rewind'){
+  //     console.log('rewind');
+  //     videoElement && (videoElement.currentTime -= 10);
+  //   }
+  //   else if(request.action === 'fastForward'){
+  //     console.log('fast forward');
+  //     videoElement && (videoElement.currentTime += 10);
+  //   }
+  // } 
 });
