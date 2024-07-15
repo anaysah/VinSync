@@ -2,13 +2,17 @@
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
 import { getCurrentTime } from "../helpers/utils";
-import { BroadcastMessage, Errors, LogEntry, Messages, Room } from "../types/types";
+import { BroadcastMessage, Errors, Home, LogEntry, Messages, Room } from "../types/types";
 import { log } from "../helpers/logger";
 
 var messages:Messages = [];
 var errors:Errors = [];
 
 var room:Room | undefined;
+
+var home:Home = {
+  highlighting: false,
+};
 // room = {
 //   name: "any name", // this name is also same to roomId
 //   members: {
@@ -111,7 +115,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   else if(message.type === "BroadcastMessage"){
     console.log("background","broadcast")
     let m:BroadcastMessage = message;
-    // m.from = "background"
+
+    if(message.action === "setHighlighting"){
+      home.highlighting = m.data.highlighting;
+    }
+
     if (m.to.includes("contentScripts")) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id!, m);
@@ -124,6 +132,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       console.log("sending data to extension", m)
     }
     console.log()
+  }
+
+  else if (message.type === 'dataFetching') {
+    if(message.action === 'getHomeData')
+      sendResponse(home);
   }
   
   else if (message.type === 'log') {

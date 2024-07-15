@@ -1,6 +1,6 @@
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BroadcastMessage } from "../../types/types";
+import { BroadcastMessage, Home } from "../../types/types";
 
 const Home = () => {
   const [highlighting, setHighlighting] = useState(false);
@@ -12,6 +12,11 @@ const Home = () => {
   };
 
   useEffect(() => {
+    chrome.runtime.sendMessage({type:"dataFetching", action: "getHomeData"}, (response:Home) => {
+      const newHighlighting = response.highlighting;
+      setHighlighting(newHighlighting);
+    })
+
     const messageListener = (message, sender, sendResponse) => {
       if (message.type === "BroadcastMessage") {
         let m = message;

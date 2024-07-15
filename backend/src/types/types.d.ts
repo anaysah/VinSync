@@ -47,3 +47,9 @@ interface BroadcastMessage {
 }
 
 export type { BroadcastMessage, FromToType }
+
+interface Home{
+  highlighting: boolean;
+}
+
+export { Home }
