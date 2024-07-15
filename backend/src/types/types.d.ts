@@ -33,3 +33,17 @@ type Messages = LogEntry[];
 type Errors = LogEntry[];
 
 export type { LogEntry, Messages, Errors };
+
+// Add 'declare' or 'export' modifier to top-level declarations in .d.ts file
+
+type FromToType = "contentScripts" | "extension" | "background";
+
+interface BroadcastMessage {
+  action: string;
+  data: any;
+  type: "BroadcastMessage";
+  from: FromToType;
+  to: FromToType[];
+}
+
+export type { BroadcastMessage, FromToType }

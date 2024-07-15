@@ -1,29 +1,50 @@
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BroadcastMessage } from "../../types/types";
 
 const Home = () => {
-  const handleControl = (action: string) =>{
+  const [highlighting, setHighlighting] = useState(false);
+
+  const handleControl = (action) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: action });
     });
-  }
+  };
 
-  // const heightLight = () => {
-  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //     chrome.tabs.sendMessage(tabs[0].id, { action: "toggleHighlighting" });
-  //   });
-  // };
+  useEffect(() => {
+    const messageListener = (message, sender, sendResponse) => {
+      if (message.type === "BroadcastMessage") {
+        let m = message;
+        if (m.to.includes("extension")) {
+          if (m.action === "setHighlighting") {
+            setHighlighting(m.data.highlighting);
+          }
+        }
+      }
+    };
 
-  // const playVideo = () => {
-  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //     chrome.tabs.sendMessage(tabs[0].id, { action: "playVideo" });
-  //   });
-  // };
+    chrome.runtime.onMessage.addListener(messageListener);
 
-  // const pauseVideo = () => {
-  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //     chrome.tabs.sendMessage(tabs[0].id, { action: "pauseVideo" });
-  //   });
-  // }
+    return () => {
+      chrome.runtime.onMessage.removeListener(messageListener);
+    };
+  }, []);
+
+  const setHighlightingState = () => {
+    const newHighlighting = !highlighting;
+    setHighlighting(newHighlighting);
+    
+    let m:BroadcastMessage = {
+      type: "BroadcastMessage",
+      action: "setHighlighting",
+      data: { highlighting: newHighlighting },
+      to: ["contentScripts"],
+      from: "extension",
+    };
+
+    chrome.runtime.sendMessage(m);
+  };
+
 
 
   return (
@@ -34,9 +55,9 @@ const Home = () => {
         </p>
         <p>After Clicking hover to the video and click to Video from the webpage</p>
         <button 
-        onClick={()=>handleControl("toggleHighlighting")}
+        onClick={setHighlightingState}
         className="bg-yellow-200 p-1 w-full rounded text-slate-500 active:bg-yellow-400 hover:bg-yellow-300 my-2">
-          Select Video
+          {highlighting ? "Stop Highlighting" : "Select Video"}
         </button>
         <p>After chossing the video please test the below contorls before sharing the video</p>
 

@@ -2,7 +2,8 @@
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
 import { getCurrentTime } from "../helpers/utils";
-import { Errors, LogEntry, Messages, Room } from "../types/types";
+import { BroadcastMessage, Errors, LogEntry, Messages, Room } from "../types/types";
+import { log } from "../helpers/logger";
 
 var messages:Messages = [];
 var errors:Errors = [];
@@ -107,14 +108,43 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     room = undefined;
   }
 
-  else if(message.type === "log"){
-    console.log("log: ", message.data);
+  else if(message.type === "BroadcastMessage"){
+    console.log("background","broadcast")
+    let m:BroadcastMessage = message;
+    // m.from = "background"
+    if (m.to.includes("contentScripts")) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id!, m);
+        console.log("sending data to content.js", m)
+      });
+    }
+  
+    if (m.to.includes("extension")) {
+      chrome.runtime.sendMessage(m);
+      console.log("sending data to extension", m)
+    }
+    console.log()
   }
+  
+  else if (message.type === 'log') {
+    if(typeof(message.data) === 'object'){
+      console.log(message.data)
+    }
+    let logMessage = `[${message.context}] ${message.data}`;
+    
+    if (sender.frameId) {
+        logMessage += ` | Frame ID: ${sender.frameId}`;
+    }
 
-  else if(message.type === "broadcastToContentScripts"){
-    //send message to current tab
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, message);
-    });
+    if (sender.url) {
+        logMessage += ` | URL: ${sender.url}`;
+    }
+
+    if (sender.origin) {
+        logMessage += ` | Origin: ${sender.origin}`;
+    }
+
+    console.log(logMessage);
   }
+  
 });
