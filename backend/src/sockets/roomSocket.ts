@@ -34,10 +34,12 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
   const handleOnLeaveRoom = () =>{
     console.log(`User ${socket.id} disconnected \n`)
     try{
-      const {roomId, userId} = leaveRoom(socket.id);
+      const {roomId, userId, isEmpty} = leaveRoom(socket.id);
       socket.leave(roomId);
       socket.to(roomId).emit('message', `User ${userId} left the room`);
       socket.emit('message', `You got disconnected`);
+
+      if(isEmpty) return true;
       const data:Room = getRoomData(roomId);
       io.to(data.name).emit('roomData', data);
       return true;
@@ -58,8 +60,10 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
   socket.on('disconnect', ()=>{
     handleOnLeaveRoom();
   });
-  
-  // socket.on('allRooms', allRooms);
+
+  socket.on('setRoomVideoDetails', (data, callback) => {
+    
+  })
 
   socket.on("testing", (data,callback)=>{
     console.log(data)

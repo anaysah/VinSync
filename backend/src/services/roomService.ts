@@ -23,13 +23,16 @@ const createRoom = (socketId: string ,roomId: string, userId: string):Room => {
   }
   // Create a new room
   rooms[roomId] = {
-    [socketId]: {name:userId, isAdmin:true}
+    name:roomId,
+    members:{
+      [socketId]: {name:userId, isAdmin:true}
+    }
   };
 
   socketRoomMapping[socketId] = roomId;
 
   console.log(rooms);
-  return {name:roomId, members:rooms[roomId]}
+  return {name:roomId, members:rooms[roomId].members}
 };
 
 const joinRoom = (socketId: string, roomId: string, userId: string): Room => {
@@ -49,27 +52,31 @@ const joinRoom = (socketId: string, roomId: string, userId: string): Room => {
   if (!rooms[roomId]) {
     throw new Error('Room not found');
   }
-  if (rooms[roomId][socketId]) {
+  if (rooms[roomId].members[socketId]) {
     throw new Error('You are already in the room');
   }
 
   // Add the user to the room
   const newUser:User = {name:userId, isAdmin:false}
-  rooms[roomId][socketId] = newUser;
+  rooms[roomId].members[socketId] = newUser;
   socketRoomMapping[socketId] = roomId;
-  return {name:roomId, members:rooms[roomId]}
+  return {name:roomId, members:rooms[roomId].members}
 };
 
-const leaveRoom = (scoketId: string ):{userId:string, roomId:string} =>{
+const leaveRoom = (scoketId: string ):{userId:string, roomId:string, isEmpty:boolean} =>{
   const roomId = socketRoomMapping[scoketId];
-  const userId = rooms[roomId][scoketId].name;
+  const userId = rooms[roomId].members[scoketId].name;
   if (!roomId) {
     throw new Error('User is not in a room');
   }
   
-  delete rooms[socketRoomMapping[scoketId]][scoketId]
+  delete rooms[socketRoomMapping[scoketId]].members[scoketId]
   delete socketRoomMapping[scoketId]
-  return {userId:userId, roomId:roomId};
+  const isEmpty = Object.keys(rooms[roomId].members).length === 0;
+  if (isEmpty) {
+    delete rooms[roomId];
+  }
+  return {userId:userId, roomId:roomId, isEmpty:isEmpty};
 }
 
 // const allRooms = (message:string, callback:Function): Room => {
@@ -78,9 +85,12 @@ const leaveRoom = (scoketId: string ):{userId:string, roomId:string} =>{
 // };
 
 const getRoomData = (roomId: string): Room => {
-  return {name:roomId, members:rooms[roomId]}
+  return {name:roomId, members:rooms[roomId].members}
 }
 
+const setRoomVideoDetails = (videoLink:string, videoElementJsPath:string, roomId:string)=>{
+  
+}
 
 export {
   createRoom,

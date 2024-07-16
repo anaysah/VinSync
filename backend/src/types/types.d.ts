@@ -12,13 +12,14 @@ interface RoomMembers {
 
 // Use type alias for Rooms since it is a map of room IDs to Room objects
 type Rooms = {
-  [roomId: string]: RoomMembers;
+  [roomId: string]: Room;
 };
 
 interface Room {
   name: string;
   members: RoomMembers;
   videoLink?: string;
+  videoElementJsPath?: string;
 }
 
 export type { User, Room, Rooms, RoomMembers };
