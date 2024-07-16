@@ -2,8 +2,7 @@
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
 import { getCurrentTime } from "../helpers/utils";
-import { BroadcastMessage, Errors, Home, LogEntry, Messages, Room } from "../types/types";
-import { log } from "../helpers/logger";
+import { BroadcastMessage, DataOperationsMessage, Errors, Home, LogEntry, Messages, Room } from "../types/types";
 
 var messages:Messages = [];
 var errors:Errors = [];
@@ -35,7 +34,7 @@ const socket = io("http://localhost:3000", {
 
 // Event listeners
 socket.on('connect', () => {
-  chrome.runtime.sendMessage({ type: 'message', data: "Connected to Socket.IO server" });
+  console.log('Connected to Socket.IO server');
 });
 
 socket.on('disconnect', () => {
@@ -64,7 +63,14 @@ socket.on('error', (data:string) => {
 
 socket.on("roomData", (data:Room)=>{
   room = data;
-  chrome.runtime.sendMessage({ type: 'room', data: data });
+  let m:DataOperationsMessage = {
+    type: "DataOperations",
+    action: "setRoom",
+    data: data,
+    from: "background",
+    to: ["extension"]
+  }
+  chrome.runtime.sendMessage(m);
 })
 
 // socket.on("newMember", (data:User)=>{
@@ -85,32 +91,45 @@ socket.on("roomData", (data:Room)=>{
 
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  if (message.type === "createRoom") {
-    console.log("background.js received createRoom message:", message.data);
-    socket.emit('createRoom', message.data.roomId, message.data.userId)
-  }
-
-  else if (message.type === "joinRoom") {
-    console.log("background.js received joinRoom message:", message.data);
-    socket.emit('joinRoom', message.data.roomId, message.data.userId);
+  if(message.type === "DataOperations"){
+    let m:DataOperationsMessage = message;
+    if (m.from == "extension") {
+      switch (message.action) {
+        case "createRoom":
+          console.log("background.js received createRoom message:", message.data);
+          socket.emit("createRoom", message.data.roomId, message.data.userId);
+          break;
+        case "joinRoom":
+          console.log("background.js received joinRoom message:", message.data);
+          socket.emit("joinRoom", message.data.roomId, message.data.userId);
+          break;
+        case "getMessages":
+          // chrome.runtime.sendMessage({ type: "allMessages", data: messages });
+          sendResponse(messages);
+          break;
+        case "getErrors":
+          // chrome.runtime.sendMessage({ type: "allErrors", data: errors });
+          sendResponse(errors);
+          break;
+        case "getRoom":
+          // chrome.runtime.sendMessage({ type: "room", data: room });
+          sendResponse(room);
+          break;
+        case "leaveRoom":
+          socket.emit("leaveRoom", (response:boolean) => {
+            console.log("background.js received leaveRoom message:", response);
+            (response?room = undefined:null)
+            sendResponse(response); //sends response to extension
+          });
+          return true; //as the response is delayed due to socket request
+          break;
+        default:
+          console.log("Unknown action:", message.action);
+          break;
+      }
+    }
   }
   
-  else if(message.type === "getMessages"){
-    chrome.runtime.sendMessage({ type: 'allMessages', data: messages });
-  }
-
-  else if(message.type === "getErrors"){
-    chrome.runtime.sendMessage({ type: 'allErrors', data: errors });
-  }
-  
-  else if(message.type === "getRoom"){
-    chrome.runtime.sendMessage({ type: 'room', data: room });
-  }
-
-  else if(message.type == "leaveRoom"){
-    socket.emit('leaveRoom');
-    room = undefined;
-  }
 
   else if(message.type === "BroadcastMessage"){
     console.log("background","broadcast")

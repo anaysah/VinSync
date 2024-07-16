@@ -40,13 +40,19 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
       socket.emit('message', `You got disconnected`);
       const data:Room = getRoomData(roomId);
       io.to(data.name).emit('roomData', data);
+      return true;
     }catch(error:any){
       socket.emit('error', error.message);
+      return false;
     }
   }
 
-  socket.on('leaveRoom', ()=>{
-    handleOnLeaveRoom();
+  socket.on('leaveRoom', (callback)=>{
+    let status = handleOnLeaveRoom();
+    if(status)
+      callback(true); //return ture if leave Room is true
+    else
+      callback(false)
   });
 
   socket.on('disconnect', ()=>{

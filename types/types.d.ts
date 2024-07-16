@@ -57,3 +57,14 @@ export { Home }
 type VideoControl = "playVideo" | "pauseVideo" | "rewind" | "fastForward";
 
 export type { VideoControl }
+
+
+interface DataOperationsMessage{
+  action:string;
+  data?: any;
+  type: "DataOperations";
+  from: FromToType;
+  to: FromToType[];
+}
+
+export type { DataOperationsMessage }

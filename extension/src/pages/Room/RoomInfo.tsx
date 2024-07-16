@@ -1,23 +1,48 @@
 import { useEffect, useState } from "react";
-import { Room } from "vinsync";
+import { DataOperationsMessage, Room } from "../../types/types";
 
 const RoomInfo = () => {
   const [room, setRoom] = useState<Room>();
 
   useEffect(() => {
-    chrome.runtime.sendMessage({type:"getRoom"})
-  },[])
+    const getRoomMessage: DataOperationsMessage = {
+      type: "DataOperations",
+      action: "getRoom",
+      from: "extension",
+      to: ["background"]
+    };
 
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "room") {
-      setRoom(message.data);
-    }
-  });
+    chrome.runtime.sendMessage(getRoomMessage,setRoom);
 
-  const onLeave = () =>{
-    chrome.runtime.sendMessage({type:"leaveRoom"})
-    chrome.runtime.sendMessage({type:"getRoom"})
-  }
+    const messageListener = (message, sender, sendResponse) => {
+      if (message.type === "DataOperations") {
+        if(message.action === "setRoom")
+          setRoom(message.data);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(messageListener);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(messageListener);
+    };
+  }, []);
+
+  const onLeave = () => {
+    const leaveRoomMessage: DataOperationsMessage = {
+      type: "DataOperations",
+      action: "leaveRoom",
+      from: "extension",
+      to: ["background"]
+    };
+
+    chrome.runtime.sendMessage(leaveRoomMessage,(response:boolean)=>{
+      if(response){
+        setRoom(undefined);
+      }
+    });
+
+  };
 
 
   return (

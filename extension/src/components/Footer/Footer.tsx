@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Errors, LogEntry, Messages } from "vinsync"
+import { DataOperationsMessage, Errors, LogEntry, Messages } from "../../types/types"
 
 
 
@@ -8,8 +8,16 @@ const Footer = () => {
   const [errors, setErrors] = useState<Errors>([])
 
   useEffect(() => {
-    chrome.runtime.sendMessage({type:"getMessages"})
-    chrome.runtime.sendMessage({type:"getErrors"})
+    let m:DataOperationsMessage = {
+      type:"DataOperations",
+      action:"getMessages",
+      from:"extension",
+      to:["background"]
+    }
+    chrome.runtime.sendMessage(m, setMessages) //will get the data from background and set it
+    
+    m.action="getErrors"
+    chrome.runtime.sendMessage(m, setErrors) //will get the errors from background
   } , [])
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -17,11 +25,6 @@ const Footer = () => {
       setMessages([message.data, ...messages ])
     } else if (message.type === "error") {
       setErrors([message.data, ...errors ])
-    }else if(message.type==="allMessages"){
-      console.log(message.data)
-      setMessages(message.data)
-    }else if(message.type==="allErrors"){
-      setErrors(message.data)
     }
   });
   

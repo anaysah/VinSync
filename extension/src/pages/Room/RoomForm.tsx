@@ -1,20 +1,41 @@
 import { useState } from "react";
+import { DataOperationsMessage } from "../../types/types";
 
 const RoomForm = () => {
     const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
   
     const createRoom = () => {
+      let m:DataOperationsMessage = {
+        type:"DataOperations",
+        action:"createRoom",
+        data:{
+          roomId:roomId,
+          userId:userId
+        },
+        from:"extension",
+        to:["background"]
+      }
       if (roomId && userId) {
         console.log("Create Room Request")
-        chrome.runtime.sendMessage({ type: 'createRoom', data: {roomId:roomId, userId:userId} });
+        chrome.runtime.sendMessage(m);
       }
     }
   
     const joinRoom = () => {
+      let m:DataOperationsMessage = {
+        type:"DataOperations",
+        action:"joinRoom",
+        data:{
+          roomId:roomId,
+          userId:userId
+        },
+        from:"extension",
+        to:["background"]
+      }
       if (roomId && userId) {
         console.log("Join Room Request")
-        chrome.runtime.sendMessage({ type: 'joinRoom', data: {roomId:roomId, userId:userId} });
+        chrome.runtime.sendMessage(m);
       }
     }
   
