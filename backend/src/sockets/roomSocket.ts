@@ -1,8 +1,9 @@
 // src/sockets/roomSocket.js
 
 import { Server, Socket } from 'socket.io';
-import { createRoom, getRoomData, joinRoom, leaveRoom } from '../services/roomService';
-import { Room } from '../types/types';
+import { createRoom, getRoomData, joinRoom, leaveRoom, saveRoomVideoDetails } from '../services/roomService';
+import { Room, VideoDetails } from '../types/types';
+import { handleError } from '../lib/errors';
 
 const handleRoomSocket = (socket:Socket, io:Server) => {
   socket.on('createRoom', (roomId, userId) => {
@@ -14,7 +15,7 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
       socket.emit('message', `You joined the room ${roomId}`);
       io.to(data.name).emit('roomData', data);
     } catch (error:any) {
-      socket.emit('error', error.message);
+      handleError(error,socket)
     }
   });
 
@@ -27,7 +28,7 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
       socket.emit('message', `You joined the room ${roomId}`);
       io.to(data.name).emit('roomData', data);
     } catch (error: any) {
-      socket.emit('error', error.message);
+      handleError(error,socket)
     }
   });
 
@@ -44,7 +45,7 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
       io.to(data.name).emit('roomData', data);
       return true;
     }catch(error:any){
-      socket.emit('error', error.message);
+      handleError(error,socket)
       return false;
     }
   }
@@ -61,8 +62,13 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
     handleOnLeaveRoom();
   });
 
-  socket.on('setRoomVideoDetails', (data, callback) => {
-    
+  socket.on('shareVideoToRoom', (VideoDetails:VideoDetails, callback) => {
+    try{
+      const room:Room = saveRoomVideoDetails(VideoDetails.videoLink, VideoDetails.videoElementJsPath, socket.id);
+      io.to(room.name).emit('roomData', room);
+    }catch(error:any){
+      handleError(error,socket)
+    }
   })
 
   socket.on("testing", (data,callback)=>{

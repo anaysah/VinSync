@@ -2,7 +2,7 @@
 // importScripts("libs/socket.io.js");
 import { io } from "socket.io-client";
 import { getCurrentTime } from "../helpers/utils";
-import { BroadcastMessage, DataOperationsMessage, Errors, Home, LogEntry, Messages, Room } from "../types/types";
+import { BroadcastMessage, DataOperationsMessage, Errors, Home, LogEntry, Messages, Room, VideoDetails } from "../types/types";
 
 var messages:Messages = [];
 var errors:Errors = [];
@@ -125,6 +125,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
           break;
         default:
           console.log("Unknown action:", message.action);
+          break;
+      }
+    }
+    else if(m.from == "contentScripts"){
+      switch (message.action) {
+        case "setRoomVideoDetails":
+          if (sender.tab && sender.tab.url && message.data && message.data.path) {
+            const videoDetails: VideoDetails = {
+              videoLink: sender.tab.url,
+              videoElementJsPath: message.data.path,
+            };
+            console.log(videoDetails)
+            if (room) {
+              room.VideoDetails = videoDetails;
+              socket.emit("shareVideoToRoom", room?.VideoDetails)
+            }
+          }else console.log("Invalid message or sender data")
           break;
       }
     }

@@ -15,14 +15,18 @@ type Rooms = {
   [roomId: string]: Room;
 };
 
+interface VideoDetails {
+  videoLink: string;
+  videoElementJsPath: string;
+}
+
 interface Room {
   name: string;
   members: RoomMembers;
-  videoLink?: string;
-  videoElementJsPath?: string;
+  VideoDetails?: VideoDetails;
 }
 
-export type { User, Room, Rooms, RoomMembers };
+export type { User, Room, Rooms, RoomMembers, VideoDetails };
 
 // Use type alias for log entry and collections of messages and errors
 type LogEntry = {

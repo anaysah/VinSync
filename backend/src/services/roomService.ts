@@ -1,6 +1,7 @@
 // src/services/roomService.ts
 
-import { Room, Rooms, User } from "../types/types";
+import { CustomError } from "../lib/errors";
+import {  Room, Rooms, User, VideoControl, VideoDetails } from "../types/types";
 
 var rooms:Rooms = {};
 var socketRoomMapping: { [socketId: string]: string } = {};
@@ -8,18 +9,18 @@ var socketRoomMapping: { [socketId: string]: string } = {};
 const createRoom = (socketId: string ,roomId: string, userId: string):Room => {
   console.log(socketRoomMapping,"::" ,rooms);
   if (!roomId) {
-    throw new Error('Room ID is required');
+    throw new CustomError('Room ID is required');
   }
   if (!userId) {
-    throw new Error('User ID is required');
+    throw new CustomError('User ID is required');
   }
   if (socketRoomMapping[socketId]){
-    throw new Error('User is already in a room');
+    throw new CustomError('User is already in a room');
   }
 
   // Check if the room already exists
   if (rooms[roomId]) {
-    throw new Error('Room already exists');
+    throw new CustomError('Room already exists');
   }
   // Create a new room
   rooms[roomId] = {
@@ -32,42 +33,42 @@ const createRoom = (socketId: string ,roomId: string, userId: string):Room => {
   socketRoomMapping[socketId] = roomId;
 
   console.log(rooms);
-  return {name:roomId, members:rooms[roomId].members}
+  return rooms[roomId];
 };
 
 const joinRoom = (socketId: string, roomId: string, userId: string): Room => {
   console.log(socketRoomMapping,"::" ,rooms);
 
   if (!roomId) {
-    throw new Error('Room ID is required');
+    throw new CustomError('Room ID is required');
   }
   if (!userId) {
-    throw new Error('User ID is required');
+    throw new CustomError('User ID is required');
   }
   if (socketRoomMapping[socketId]){
-    throw new Error('You are already in the room');
+    throw new CustomError('You are already in the room');
   }
 
   // Check if the room exists
   if (!rooms[roomId]) {
-    throw new Error('Room not found');
+    throw new CustomError('Room not found');
   }
   if (rooms[roomId].members[socketId]) {
-    throw new Error('You are already in the room');
+    throw new CustomError('You are already in the room');
   }
 
   // Add the user to the room
   const newUser:User = {name:userId, isAdmin:false}
   rooms[roomId].members[socketId] = newUser;
   socketRoomMapping[socketId] = roomId;
-  return {name:roomId, members:rooms[roomId].members}
+  return rooms[roomId];
 };
 
 const leaveRoom = (scoketId: string ):{userId:string, roomId:string, isEmpty:boolean} =>{
   const roomId = socketRoomMapping[scoketId];
   const userId = rooms[roomId].members[scoketId].name;
   if (!roomId) {
-    throw new Error('User is not in a room');
+    throw new CustomError('User is not in a room');
   }
   
   delete rooms[socketRoomMapping[scoketId]].members[scoketId]
@@ -85,11 +86,23 @@ const leaveRoom = (scoketId: string ):{userId:string, roomId:string, isEmpty:boo
 // };
 
 const getRoomData = (roomId: string): Room => {
-  return {name:roomId, members:rooms[roomId].members}
-}
+  if (!roomId) {
+    throw new CustomError('Room ID is required');
+  }
+  // Check if the room exists
+  if (!rooms[roomId]) {
+    throw new CustomError('Room not found');
+  }
+  return rooms[roomId];
+};
 
-const setRoomVideoDetails = (videoLink:string, videoElementJsPath:string, roomId:string)=>{
-  
+const saveRoomVideoDetails = (videoLink:string, videoElementJsPath:string, socketId:string):Room=>{
+  const roomId = socketRoomMapping[socketId];
+  if (!roomId) {
+    throw new CustomError('User is not in a room');
+  }
+  rooms[roomId].VideoDetails = {videoLink:videoLink, videoElementJsPath:videoElementJsPath}
+  return rooms[roomId];
 }
 
 export {
@@ -97,5 +110,6 @@ export {
   joinRoom,
   // allRooms,
   leaveRoom,
-  getRoomData
+  getRoomData,
+  saveRoomVideoDetails
 };

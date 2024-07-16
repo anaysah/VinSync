@@ -1,8 +1,45 @@
-import { BroadcastMessage } from "../types/types";
+import { BroadcastMessage, DataOperationsMessage } from "../types/types";
 
 var videoElement: HTMLVideoElement | null = null;
 var highlighting = false;
 let overlayElement: HTMLElement | null = null;
+
+//utils functions
+function getJSPath(element) {
+  if (!element) return; // If element is not provided
+
+  let path = '';
+  const pathSegments = [];
+
+  while (element) {
+      let selector = getElementSelector(element);
+      pathSegments.unshift(selector);
+      element = element.parentElement;
+  }
+
+  path = pathSegments.join(' > ');
+  return path;
+}
+
+function getElementSelector(element) {
+  if (!element) return '';
+
+  let selector = '';
+  const id = element.id;
+  const classes = Array.from(element.classList).join('.');
+  const tagName = element.tagName.toLowerCase();
+
+  if (id) {
+      selector = `#${id}`;
+  } else if (classes) {
+      selector = `${tagName}.${classes}`;
+  } else {
+      selector = tagName;
+  }
+
+  return selector;
+}
+//utils funtions over
 
 //-----Overylay functions
 function createOverlay() {
@@ -111,8 +148,10 @@ function onClickElements(event) {
   event.stopPropagation();
   if (highlighting && event.target instanceof HTMLVideoElement) {
     videoElement = event.target; // Sets the video element
-    broadcastToggleHighlightToAllContentScripts();
-    clickOverlay(event.target);
+    const path = getJSPath(event.target); 
+    path && setRoomVideoDetails(path); // sets the Room Video Details in backround.js
+    broadcastToggleHighlightToAllContentScripts();  //this stop highligting in all frames
+    clickOverlay(event.target);  // this show a "video selected message if video found"
   }
 }
 
@@ -149,6 +188,17 @@ function broadcastToggleHighlightToAllContentScripts() {
   chrome.runtime.sendMessage(m);
 }
 
+function setRoomVideoDetails(path:string){
+  let m:DataOperationsMessage = {
+    type:"DataOperations",
+    action:"setRoomVideoDetails",
+    data:{"path":path},
+    to:['background'],
+    from:"contentScripts",
+  }
+  chrome.runtime.sendMessage(m);
+}
+
 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -161,23 +211,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if(highlighting) addEventListenerToHighlight();
         else removeEventListenerToHighlight();
       }
-      if (m.action == "VideoControl") {
+      if (m.action == "VideoControl" && videoElement) {
         switch (request.data.Control) {
           case 'playVideo':
             console.log('play video');
-            videoElement && videoElement.play();
+            videoElement.play();
             break;
           case 'pauseVideo':
             console.log('pause video');
-            videoElement && videoElement.pause();
+            videoElement.pause();
             break;
           case 'rewind':
             console.log('rewind');
-            videoElement && (videoElement.currentTime -= 10);
+            (videoElement.currentTime -= 10);
             break;
           case 'fastForward':
             console.log('fast forward');
-            videoElement && (videoElement.currentTime += 10);
+            (videoElement.currentTime += 10);
             break;
           default:
             console.log('Unknown control action');
