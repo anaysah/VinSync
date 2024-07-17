@@ -1,6 +1,8 @@
-import { BroadcastMessage, DataOperationsMessage } from "../types/types";
+import { log } from "../helpers/logger";
+import { BroadcastMessage, DataOperationsMessage, VideoDetails } from "../types/types";
 
 var videoElement: HTMLVideoElement | null = null;
+var videoDetails: VideoDetails | null = null;
 var highlighting = false;
 let overlayElement: HTMLElement | null = null;
 
@@ -155,6 +157,109 @@ function onClickElements(event) {
   }
 }
 
+function broadcastToggleHighlightToAllContentScripts() {
+  //their can be multiple content.js if video is in a iframe
+  //this will send a message to background to change toggle highlight to every content.js
+  let m:BroadcastMessage = {
+    type:"BroadcastMessage",
+    action: "setHighlighting",
+    data:{"highlighting": (!highlighting)},
+    to:["contentScripts", "extension"],
+    from:"contentScripts",
+  }
+  chrome.runtime.sendMessage(m);
+}
+
+function setRoomVideoDetails(path:string){
+  //to set the videoDetails in background.js
+  let m:DataOperationsMessage = {
+    type:"DataOperations",
+    action:"setRoomVideoDetails",
+    data:{"path":path},
+    to:['background'],
+    from:"contentScripts",
+  }
+  chrome.runtime.sendMessage(m);
+}
+
+// functions for set video element when page loades -----------------------
+
+const handleMutations = function(mutationsList: MutationRecord[], observer: MutationObserver) {
+  for (let mutation of mutationsList) {
+    if (mutation.type === 'childList') {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeName.toLowerCase() === 'video' && getJSPath(node as HTMLElement) === videoDetails?.videoElementJsPath) {
+          videoElement = node as HTMLVideoElement;
+          log("content script", 'A video element has been added');
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const videos = (node as HTMLElement).querySelectorAll('video');
+          videos.forEach(video => {
+            if (getJSPath(video) === videoDetails?.videoElementJsPath) {
+              videoElement = video;
+              log("content script", 'A video element has been found within a new element');
+            }
+          });
+        }
+      });
+    }
+  }
+};
+
+function getAndSetVideoDetails(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let getVideoLinkMessage: DataOperationsMessage = {
+      type: "DataOperations",
+      action: "getVideoDetails",
+      to: ["background"],
+      from: "contentScripts",
+    };
+
+    chrome.runtime.sendMessage(getVideoLinkMessage, (response: VideoDetails) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        videoDetails = response;
+        resolve();
+      }
+    });
+  });
+}
+
+function setVideoElementFromJSpath(){
+  if (videoDetails && videoDetails.videoElementJsPath) {
+    const path = videoDetails.videoElementJsPath;
+    try {
+      videoElement = document.querySelector(path) as HTMLVideoElement;
+      if (videoElement) {
+        // console.log("Video element found:", videoElement);
+        log("content script", "Video element found")
+      } else {
+        log("content script", "Video element not found")
+      }
+    } catch (error) {
+      log("content script", "Video element not found")
+    }
+  }
+}
+
+window.addEventListener('load', function() {
+  log("content script", "Page fully loaded");
+  getAndSetVideoDetails()
+    .then(() => {
+      setVideoElementFromJSpath();
+
+      const observer = new MutationObserver(handleMutations);
+      const targetNode = document.body;
+      const config = { childList: true, subtree: true };
+      observer.observe(targetNode, config);
+
+      // log("content script", `${videoElement?.tagName} found`);
+    })
+    .catch(error => {
+      log("content script", `Error: ${error}`);
+      console.error("Error:", error);
+    });
+});
 
 function addEventListenerToHighlight(){
   document.addEventListener('mouseover', onMouseoverElements);
@@ -173,33 +278,6 @@ function removeEventListenerToHighlight(){
 
   removeHighlight();
 }
-
-
-function broadcastToggleHighlightToAllContentScripts() {
-  //their can be multiple content.js if video is in a iframe
-  //this will send a message to background to change toggle highlight to every content.js
-  let m:BroadcastMessage = {
-    type:"BroadcastMessage",
-    action: "setHighlighting",
-    data:{"highlighting": (!highlighting)},
-    to:["contentScripts", "extension"],
-    from:"contentScripts",
-  }
-  chrome.runtime.sendMessage(m);
-}
-
-function setRoomVideoDetails(path:string){
-  let m:DataOperationsMessage = {
-    type:"DataOperations",
-    action:"setRoomVideoDetails",
-    data:{"path":path},
-    to:['background'],
-    from:"contentScripts",
-  }
-  chrome.runtime.sendMessage(m);
-}
-
-
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "BroadcastMessage" ) {
@@ -236,22 +314,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     }
   }
-  // else if (request.type="videoContorl") {
-  //   if(request.action === 'playVideo'){
-  //     console.log('play video');
-  //     videoElement && videoElement.play();
+  // else if(request.type === "DataOperations"){
+  //   let m:DataOperationsMessage = request;
+  //   if(m.from === "background" && m.to.includes("contentScripts")){
+  //     switch (m.action) {
+  //       case "setVideoElement":
+  //         videoDetails = m.data;
+  //         setVideoElementFromJSpath();
+  //         break;
+  //       default:
+  //         console.log("Unknown action:", m.action);
+  //         break;
+  //     }
   //   }
-  //   else if (request.action === 'pauseVideo') {
-  //     console.log('pause video');
-  //     videoElement && videoElement.pause();
-  //   }
-  //   else if(request.action === 'rewind'){
-  //     console.log('rewind');
-  //     videoElement && (videoElement.currentTime -= 10);
-  //   }
-  //   else if(request.action === 'fastForward'){
-  //     console.log('fast forward');
-  //     videoElement && (videoElement.currentTime += 10);
-  //   }
-  // } 
+  // }
 });

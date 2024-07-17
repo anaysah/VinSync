@@ -62,37 +62,57 @@ socket.on('error', (data:string) => {
 });
 
 socket.on("roomData", (data:Room)=>{
+  //this receives roomData everytime it is changed on server to update the client
   room = data;
   let m:DataOperationsMessage = {
     type: "DataOperations",
     action: "setRoom",
     data: data,
     from: "background",
-    to: ["extension"]
+    to: ["extension"] //home, Room
   }
   chrome.runtime.sendMessage(m);
+
+  // if (room?.VideoDetails){
+  //   let m: DataOperationsMessage = {
+  //     type: "DataOperations",
+  //     action: "setVideoElement",
+  //     data: room.VideoDetails,
+  //     from: "background",
+  //     to: ["contentScripts"] 
+  //   }
+  //   chrome.runtime.sendMessage(m);
+  // }
 })
 
-// socket.on("newMember", (data:User)=>{
-//   room.members = { ...room.members, [data.socketId!]:{name:data.name}}
-// })
-
-// socket.on("joinRoom", (data:Room)=>{
-//   room = data;
-// })
-
-// You can also define functions to emit events from other parts of your extension
-// function emitTestEvent(data) {
-//   socket.emit('testing', data, (response) => {
-//     console.log('Response from server:', response);
-//   });
+// function handlefunctionInjection(arg){
+//   setVideoElementFromJSpath(arg)
 // }
+
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+//   if (changeInfo.status === 'complete' && room?.VideoDetails && tab.url === room.VideoDetails.videoLink) {
+//     chrome.scripting.executeScript({
+//         target: { tabId: tabId, allFrames: true },
+//         func: handlefunctionInjection,
+//         args: [room.VideoDetails.videoElementJsPath]
+//     });
+//   }
+// });
 
 
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if(message.type === "DataOperations"){
     let m:DataOperationsMessage = message;
+    if(m.from == "extension" || m.from == "contentScripts"){
+      //this when both extension and contentScritps can ask
+      switch (message.action) {
+        case "getVideoDetails":
+          sendResponse(room?.VideoDetails)
+          break;
+      }
+    }
+
     if (m.from == "extension") {
       switch (message.action) {
         case "createRoom":
@@ -104,15 +124,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
           socket.emit("joinRoom", message.data.roomId, message.data.userId);
           break;
         case "getMessages":
-          // chrome.runtime.sendMessage({ type: "allMessages", data: messages });
           sendResponse(messages);
           break;
         case "getErrors":
-          // chrome.runtime.sendMessage({ type: "allErrors", data: errors });
           sendResponse(errors);
           break;
         case "getRoom":
-          // chrome.runtime.sendMessage({ type: "room", data: room });
           sendResponse(room);
           break;
         case "leaveRoom":
@@ -123,6 +140,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
           });
           return true; //as the response is delayed due to socket request
           break;
+        case "getHomeData":
+          sendResponse(home);
+          break; 
         default:
           console.log("Unknown action:", message.action);
           break;
@@ -170,10 +190,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     console.log()
   }
 
-  else if (message.type === 'dataFetching') {
-    if(message.action === 'getHomeData')
-      sendResponse(home);
-  }
+  // else if (message.type === 'dataFetching') {
+  //   if(message.action === 'getHomeData')
+  //     sendResponse(home);
+  // }
   
   else if (message.type === 'log') {
     if(typeof(message.data) === 'object'){

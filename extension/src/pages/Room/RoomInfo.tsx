@@ -50,14 +50,7 @@ const RoomInfo = () => {
         <div>
           <span className="mr-2">Room:</span>
           <span className="text-primary font-bold">{room?.name}</span> 
-          {
-            room?.VideoDetails?.videoLink && (
-              <>
-                <span>Video Link: </span>
-                <span className="underline text-blue-500"><a href={room?.VideoDetails?.videoLink} target="_blank" rel="noopener noreferrer">open</a></span>    
-              </>
-            )
-          }
+          
           {
             room && (<button className="underline text-blue-700 float-right" onClick={onLeave}>Leave</button>)
           }
