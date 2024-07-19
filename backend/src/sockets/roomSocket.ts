@@ -1,7 +1,7 @@
 // src/sockets/roomSocket.js
 
 import { Server, Socket } from 'socket.io';
-import { createRoom, getRoomData, joinRoom, leaveRoom, saveRoomVideoDetails } from '../services/roomService';
+import { createRoom, getRoomData, getVideoState, joinRoom, leaveRoom, saveRoomVideoDetails, saveRoomVideoState } from '../services/roomService';
 import { Room, VideoDetails } from '../types/types';
 import { handleError } from '../lib/errors';
 
@@ -68,6 +68,25 @@ const handleRoomSocket = (socket:Socket, io:Server) => {
       io.to(room.name).emit('roomData', room);
     }catch(error:any){
       handleError(error,socket)
+    }
+  })
+
+  socket.on("updateVideoState", (videoState) => {
+    try{
+      const roomId = saveRoomVideoState(videoState, socket.id)
+      socket.to(roomId).emit("videoStateChanged", videoState); // this only send state to other memebes of the room
+      // console.log(`User ${socket.id} updated video state`)
+    }catch(error:any){
+      handleError(error, socket)
+    }
+  });
+
+  socket.on("getVideoState", (callback) => {
+    try{
+      const videoState = getVideoState(socket.id);
+      callback(videoState);
+    }catch(error:any){
+      handleError(error, socket)
     }
   })
 

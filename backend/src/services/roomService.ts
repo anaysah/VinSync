@@ -1,7 +1,7 @@
 // src/services/roomService.ts
 
 import { CustomError } from "../lib/errors";
-import {  Room, Rooms, User, VideoControl, VideoDetails } from "../types/types";
+import {  Room, Rooms, User, VideoControl, VideoDetails, VideoState } from "../types/types";
 
 var rooms:Rooms = {};
 var socketRoomMapping: { [socketId: string]: string } = {};
@@ -105,11 +105,30 @@ const saveRoomVideoDetails = (videoLink:string, videoElementJsPath:string, socke
   return rooms[roomId];
 }
 
+const saveRoomVideoState = (videoState:VideoState, socketId:string)=>{
+  const roomId = socketRoomMapping[socketId];
+  if (!roomId) {
+    throw new CustomError('User is not in a room');
+  }
+  rooms[roomId].VideoState = videoState;
+  return roomId;
+}
+
+const getVideoState = (socketId:string) =>{
+  const roomId = socketRoomMapping[socketId];
+  if (!roomId) {
+    throw new CustomError('User is not in a room');
+  }
+  return rooms[roomId].VideoState;
+}
+
 export {
   createRoom,
   joinRoom,
   // allRooms,
   leaveRoom,
   getRoomData,
-  saveRoomVideoDetails
+  saveRoomVideoDetails,
+  saveRoomVideoState,
+  getVideoState
 };

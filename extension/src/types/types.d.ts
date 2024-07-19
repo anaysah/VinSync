@@ -20,13 +20,37 @@ interface VideoDetails {
   videoElementJsPath: string;
 }
 
+// interface VideoState {
+//   currentTime: number;
+//   // duration: number;
+//   paused: boolean;
+//   // volume: number;
+//   // muted: boolean;
+//   buffered: TimeRanges;
+//   playbackRate: number;
+//   ended: boolean;
+// }
+
+interface VideoState {
+  isPlaying: boolean;
+  isPaused?: boolean;
+  isBuffering: boolean;
+  currentTime: number;
+  // duration: number;
+  // volume: number;
+  // isMuted: boolean;
+  playbackRate: number;
+}
+
+
 interface Room {
   name: string;
   members: RoomMembers;
   VideoDetails?: VideoDetails;
+  VideoState?: VideoState;
 }
 
-export type { User, Room, Rooms, RoomMembers, VideoDetails };
+export type { User, Room, Rooms, RoomMembers, VideoDetails, VideoState };
 
 // Use type alias for log entry and collections of messages and errors
 type LogEntry = {

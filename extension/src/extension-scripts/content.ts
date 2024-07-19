@@ -1,10 +1,44 @@
 import { log } from "../helpers/logger";
-import { BroadcastMessage, DataOperationsMessage, VideoDetails } from "../types/types";
+import { BroadcastMessage, DataOperationsMessage, VideoDetails, VideoState } from "../types/types";
 
 var videoElement: HTMLVideoElement | null = null;
 var videoDetails: VideoDetails | null = null;
+var videoState:VideoState | null = null;
 var highlighting = false;
 let overlayElement: HTMLElement | null = null;
+
+// This function will run whenever the videoElement gets changes
+var onVideoElementVarChange = () => {
+  if (!videoElement) return;
+  addVideoEventListeners();
+};
+
+// this is watcher who watches for videoElement value changes. it runs function automatically if var values changes
+var videoElementW = {
+  get value() {
+      return videoElement;
+  },
+  set value(newValue) {
+      videoElement = newValue;
+      onVideoElementVarChange();
+  }
+};
+
+// This function will run whenever the videoState gets changes
+var onVideoStateVarChange = () => {
+  if (!videoState) return;
+};
+
+// this is watcher who watches for videoState value changes. it runs function automatically if var values changes
+var videoStateW = {
+  get value() {
+      return videoState;
+  },
+  set value(newValue) {
+      videoState = newValue;
+      onVideoStateVarChange();
+  }
+};
 
 //utils functions
 function getJSPath(element) {
@@ -149,7 +183,7 @@ function onClickElements(event) {
   event.preventDefault();
   event.stopPropagation();
   if (highlighting && event.target instanceof HTMLVideoElement) {
-    videoElement = event.target; // Sets the video element
+    videoElementW.value = event.target; // Sets the video element
     const path = getJSPath(event.target); 
     path && setRoomVideoDetails(path); // sets the Room Video Details in backround.js
     broadcastToggleHighlightToAllContentScripts();  //this stop highligting in all frames
@@ -182,21 +216,129 @@ function setRoomVideoDetails(path:string){
   chrome.runtime.sendMessage(m);
 }
 
-// functions for set video element when page loades -----------------------
+// Videostates functions starts here -----------------------------------------
+function addVideoEventListeners() {  //function to add event listner on the videoElement
+  if(!videoElement) return;
 
+  // videoElement.addEventListener('play', handleVideoListener)
+
+  videoElement.addEventListener('pause', handleVideoListener)
+
+  videoElement.addEventListener('playing', handleVideoListener)
+
+  videoElement.addEventListener('waiting', handleVideoListener)
+
+  // videoElement.addEventListener('timeupdate', handleVideoListener)
+
+  videoElement.addEventListener('seeked', handleVideoListener)
+
+}
+
+function removeVideoEventListeners() {
+  if (!videoElement) return;
+
+  videoElement.removeEventListener('pause', handleVideoListener);
+
+  videoElement.removeEventListener('playing', handleVideoListener);
+
+  videoElement.removeEventListener('waiting', handleVideoListener);
+
+  videoElement.removeEventListener('seeked', handleVideoListener);
+}
+
+
+function handleVideoListener(){
+  if (!videoElement) return;
+  let videoState:VideoState = makeVideoState();
+  updateVideoStateInRoom(videoState);
+  log("content script", `Video state updated V:${videoElement?.paused}`)
+}
+
+function makeVideoState() {
+  if (!videoElement) return;
+  let newVideoState:VideoState = {
+    isPlaying: !videoElement.paused && !videoElement.ended && videoElement.readyState > 2,
+    isBuffering: videoElement.readyState < 4 && videoElement.networkState == videoElement.NETWORK_LOADING,
+    currentTime: videoElement.currentTime,
+    playbackRate: videoElement.playbackRate,
+  };
+  return newVideoState;
+}
+
+
+function updateVideoStateInRoom(videoState:VideoState) {
+  let m:DataOperationsMessage = {
+    type:"DataOperations",
+    action:"updateVideoState",
+    data:{"videoState":videoState},
+    to:['background'],
+    from:"contentScripts",
+  }
+  chrome.runtime.sendMessage(m);
+}
+
+async function setVideoElementByState() {
+  if (!videoElement || !videoState) return;
+  if (videoState.isBuffering) {
+    // Custom handling for buffering state, if needed
+    try {
+      await videoElement.pause();
+      return;
+    } catch (error) {
+      log("content script", `Error pausing video for buffering: ${error}`);
+    }
+  }
+
+  // Set current time if different by more than the tolerance
+  const TOLERANCE_SECONDS = 2; // Adjust this value as needed
+  if (Math.abs(videoElement.currentTime - videoState.currentTime) > TOLERANCE_SECONDS) {
+    videoElement.currentTime = videoState.currentTime;
+  }
+
+  // if(videoState.currentTime !== videoElement.currentTime){
+  //   videoElement.currentTime = videoState.currentTime;
+  // }
+
+  // Set playback rate if different
+  if (videoElement.playbackRate !== videoState.playbackRate) {
+    videoElement.playbackRate = videoState.playbackRate; //
+  }
+
+  // Play or pause the video based on the state
+  if (videoState.isPlaying && videoElement.paused) {
+    try {
+      await videoElement.play();
+    } catch (error) {
+      log("content script", `Error playing video: ${error}`);
+    }
+  } else if (!videoState.isPlaying && !videoElement.paused) {
+    try {
+      await videoElement.pause();
+    } catch (error) {
+      log("content script", `Error pausing video: ${error}`);
+    }
+  }
+
+  log("content script", "Video element state set by videoState");
+}
+
+
+// Videostates functions ends here-----------------------------------------------
+
+// functions for set video element when page loades -----------------------
 const handleMutations = function(mutationsList: MutationRecord[], observer: MutationObserver) {
   for (let mutation of mutationsList) {
     if (mutation.type === 'childList') {
       mutation.addedNodes.forEach(node => {
         if (node.nodeName.toLowerCase() === 'video' && getJSPath(node as HTMLElement) === videoDetails?.videoElementJsPath) {
-          videoElement = node as HTMLVideoElement;
-          log("content script", 'A video element has been added');
+          videoElementW.value = node as HTMLVideoElement;
+          // log("content script", 'A video element has been added');
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const videos = (node as HTMLElement).querySelectorAll('video');
           videos.forEach(video => {
             if (getJSPath(video) === videoDetails?.videoElementJsPath) {
-              videoElement = video;
-              log("content script", 'A video element has been found within a new element');
+              videoElementW.value = video;
+              // log("content script", 'A video element has been found within a new element');
             }
           });
         }
@@ -229,7 +371,7 @@ function setVideoElementFromJSpath(){
   if (videoDetails && videoDetails.videoElementJsPath) {
     const path = videoDetails.videoElementJsPath;
     try {
-      videoElement = document.querySelector(path) as HTMLVideoElement;
+      videoElementW.value = document.querySelector(path) as HTMLVideoElement;
       if (videoElement) {
         // console.log("Video element found:", videoElement);
         log("content script", "Video element found")
@@ -242,24 +384,40 @@ function setVideoElementFromJSpath(){
   }
 }
 
+// will complete these two functinos in future if needed
+// function getVideoStateFromServer(){
+//   let m:DataOperationsMessage = {
+//     type:"DataOperations",
+//     action:"getVideoState",
+//     to:['background'],
+//     from:"contentScripts",
+//   }
+//   chrome.runtime.sendMessage(m);
+// }
+
+// function setVideoStateOnElementFound(){
+
+// }
+
 window.addEventListener('load', function() {
   log("content script", "Page fully loaded");
   getAndSetVideoDetails()
     .then(() => {
-      setVideoElementFromJSpath();
+      setVideoElementFromJSpath(); // its will find video element normally with query selector
 
+      //if video element is added dynamicallly
       const observer = new MutationObserver(handleMutations);
       const targetNode = document.body;
       const config = { childList: true, subtree: true };
       observer.observe(targetNode, config);
 
-      // log("content script", `${videoElement?.tagName} found`);
     })
     .catch(error => {
       log("content script", `Error: ${error}`);
       console.error("Error:", error);
     });
 });
+// functions for set video element when page loades ends here -----------------------
 
 function addEventListenerToHighlight(){
   document.addEventListener('mouseover', onMouseoverElements);
@@ -279,7 +437,7 @@ function removeEventListenerToHighlight(){
   removeHighlight();
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async(request, sender, sendResponse) => {
   if (request.type === "BroadcastMessage" ) {
     let m:BroadcastMessage = request;
     if (m.to.includes("contentScripts")) {
@@ -314,18 +472,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     }
   }
-  // else if(request.type === "DataOperations"){
-  //   let m:DataOperationsMessage = request;
-  //   if(m.from === "background" && m.to.includes("contentScripts")){
-  //     switch (m.action) {
-  //       case "setVideoElement":
-  //         videoDetails = m.data;
-  //         setVideoElementFromJSpath();
-  //         break;
-  //       default:
-  //         console.log("Unknown action:", m.action);
-  //         break;
-  //     }
-  //   }
-  // }
+  else if(request.type === "DataOperations"){
+    let m:DataOperationsMessage = request;
+    if(m.from === "background" && m.to.includes("contentScripts")){
+      if(m.action=="updateVideoVideoElementByState" && videoElement){
+        removeVideoEventListeners();
+        videoState = m.data.videoState;
+        await setVideoElementByState();
+        addVideoEventListeners();
+      }
+    }
+  }
 });

@@ -38,6 +38,7 @@ socket.on('connect', () => {
 });
 
 socket.on('disconnect', () => {
+  room=undefined
   console.log('Disconnected from Socket.IO server');
 });
 
@@ -83,6 +84,20 @@ socket.on("roomData", (data:Room)=>{
   //   }
   //   chrome.runtime.sendMessage(m);
   // }
+})
+
+socket.on("videoStateChanged", (videoState)=>{
+  //this receives videoStateChanged everytime it is changed on server to update the client
+  let m:DataOperationsMessage = {
+    type: "DataOperations",
+    action: "updateVideoVideoElementByState",
+    data: {"videoState":videoState},
+    from: "background",
+    to: ["contentScripts"] 
+  }
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id!, m);
+  });
 })
 
 // function handlefunctionInjection(arg){
@@ -162,6 +177,22 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
               socket.emit("shareVideoToRoom", room?.VideoDetails)
             }
           }else console.log("Invalid message or sender data")
+          break;
+        case "updateVideoState":
+          if (room && message.data && message.data.videoState) {
+            // room.VideoState = message.data.videoState;
+            // console.log(room.VideoState)
+            socket.emit("updateVideoState", message.data.videoState)
+          }
+          break;
+        case "getVideoState":
+          socket.emit("getVideoState", (response:boolean) => {
+            sendResponse(response); //sends response to extension
+          });
+          return true; //as the response is delayed due to socket request
+          break;
+        default:
+          console.log("Unknown action:", message.action);
           break;
       }
     }
